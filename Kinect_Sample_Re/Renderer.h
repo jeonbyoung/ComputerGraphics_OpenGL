@@ -63,6 +63,10 @@ struct MMesh {
 	int T2;
 	int T3;
 	int T4;
+	int N1;
+	int N2;
+	int N3;
+	int N4;
 };
 
 // variables for GUI
@@ -96,6 +100,8 @@ Vertex *vertex2;
 Vertex *vertex_color2;
 MMesh *ocean;
 
+Vertex *ocean_normal;
+
 GLubyte ocean_texels[2048][2048][4];
 GLuint oceanBindIndex = 1;
 int ocean_tex_w = 0, ocean_tex_h = 0;
@@ -121,6 +127,17 @@ GLuint skyBindIndex[4];
 int sky_tex_w = 0, sky_tex_h = 0;
 int sky_face_cnt = 0;
 int sky_band_start[4] = {0};
+
+
+// Moon
+Vertex *vertex5;
+Vertex *vertex_color5;
+MMesh *moon;
+
+GLubyte moon_texels[2048][2048][4];
+GLuint moonBindIndex = 4;
+int moon_tex_w = 0, moon_tex_h = 0;
+int moon_face_cnt = 0;
 
 int add_depth_flag = 0;
 int model_flag = 0;
@@ -175,6 +192,8 @@ void reshape(int, int);
 void motion(int, int);
 
 void loadBMP(const char* path, GLubyte texels[2048][2048][4], int* outW, int* outH);
+void drawDragon();
+void drawSubmarine();
 
 // basic functions for computation/GUI
 // trackball codes were imported from those of Gavin Bell

@@ -381,7 +381,7 @@ void InitializeWindow(int argc, char* argv[])
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	// Dragon
+	// Submarine
 	glGenTextures(1, &submarineBindIndex);
 	glBindTexture(GL_TEXTURE_2D, submarineBindIndex);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 2048);
@@ -396,9 +396,6 @@ void InitializeWindow(int argc, char* argv[])
 
 	// Sky
 	glGenTextures(4, skyBindIndex);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthMask(GL_FALSE);
 	for(int i = 0; i < 4; i++){
 		glBindTexture(GL_TEXTURE_2D, skyBindIndex[i]);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 2048);
@@ -410,8 +407,19 @@ void InitializeWindow(int argc, char* argv[])
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	}
-	glDepthMask(GL_TRUE);
-	glDisable(GL_BLEND);
+	
+	// Moon
+	glGenTextures(1, &moonBindIndex);
+	glBindTexture(GL_TEXTURE_2D, moonBindIndex);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 2048);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, moon_tex_w, moon_tex_h, 0,
+				GL_RGBA, GL_UNSIGNED_BYTE, moon_texels);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	
 
 	reshape(1000, 1000);
 
@@ -480,41 +488,7 @@ void loadBMP(const char* path, GLubyte texels[2048][2048][4], int* outW, int* ou
     delete[] data;
 }
 
-
-void display()
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60, 1, 0.1, 200);
-
-	GLfloat m[4][4],m1[4][4];
-	build_rotmatrix(m, quat);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(0, 2.0, 2.0, 0, 0, 0, 0, 1.0, 0); 
-	glTranslatef(t[0], t[1], t[2]+1);
-	glMultMatrixf(&m[0][0]);
-
-	glBegin(GL_LINES);
-		glColor3f(1.0,0,0);
-		glVertex3f(0,0,0);
-		glVertex3f(0,0,1);
-
-		glColor3f(0,1.0,0);
-		glVertex3f(0,0,0);
-		glVertex3f(0,1,0);
-
-		glColor3f(0,0,1.0);
-		glVertex3f(0,0,0);
-		glVertex3f(1,0,0);
-	glEnd();
-
-
-
-	glDisable(GL_LIGHTING);
-
+void drawDragon(){
 	glPushMatrix();
 	glTranslatef(0, 0.3f, 0);
 
@@ -541,32 +515,9 @@ void display()
 	
 	glEnd();
 	glPopMatrix();
+}
 
-	glPushMatrix();
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, oceanBindIndex);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glColor3f(1,1,1);
-	glScalef(4.0f, 4.0f, 4.0f);
-
-	glBegin(GL_QUADS);
-	for (int jj = 0; jj < ocean_face_cnt; jj++) {
-		glTexCoord2f(vertex_color2[ocean[jj].T1-1].X, vertex_color2[ocean[jj].T1-1].Y);
-		glVertex3f(vertex2[ocean[jj].V1-1].X, vertex2[ocean[jj].V1-1].Y, vertex2[ocean[jj].V1-1].Z);
-
-		glTexCoord2f(vertex_color2[ocean[jj].T2-1].X, vertex_color2[ocean[jj].T2-1].Y);
-		glVertex3f(vertex2[ocean[jj].V2-1].X, vertex2[ocean[jj].V2-1].Y, vertex2[ocean[jj].V2-1].Z);
-
-		glTexCoord2f(vertex_color2[ocean[jj].T3-1].X, vertex_color2[ocean[jj].T3-1].Y);
-		glVertex3f(vertex2[ocean[jj].V3-1].X, vertex2[ocean[jj].V3-1].Y, vertex2[ocean[jj].V3-1].Z);
-
-		glTexCoord2f(vertex_color2[ocean[jj].T4-1].X, vertex_color2[ocean[jj].T4-1].Y);
-		glVertex3f(vertex2[ocean[jj].V4-1].X, vertex2[ocean[jj].V4-1].Y, vertex2[ocean[jj].V4-1].Z);
-	}
-	glEnd();
-
-	glPopMatrix();
-
+void drawSubmarine(){
 	glPushMatrix();
 	glTranslatef(0.4f, 0.0f, 0.4f);
 	glEnable(GL_TEXTURE_2D);
@@ -591,13 +542,149 @@ void display()
 	glEnd();
 
 	glPopMatrix();
+}
 
+
+void display()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60, 1, 0.1, 200);
+
+	GLfloat m[4][4],m1[4][4];
+	build_rotmatrix(m, quat);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(0, 2.0, 2.0, 0, 0, 0, 0, 1.0, 0); 
+	glTranslatef(t[0], t[1], t[2]+1);
+	glMultMatrixf(&m[0][0]);
+
+	// Lighting
+	glEnable(GL_NORMALIZE);
+	glShadeModel(GL_SMOOTH);
+	glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+
+	glPushMatrix();
+	glTranslatef(0.0f, 2.5f, 0.0f);
+	GLfloat lightpos[4] = { 0, 0, 0, 1 };
+	glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
+	glPopMatrix();
+
+	GLfloat ambient0[4]  = { 0.15f, 0.15f, 0.20f, 1 };
+	GLfloat diffuse0[4]  = { 0.9f,  0.9f,  1.0f,  1 };
+	GLfloat specular0[4] = { 1, 1, 1, 1 };
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient0);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE,  diffuse0);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specular0);
+
+	glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.2);
+	glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.1);
+	glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.05);
+
+
+	glBegin(GL_LINES);
+		glColor3f(1.0,0,0);
+		glVertex3f(0,0,0);
+		glVertex3f(0,0,1);
+
+		glColor3f(0,1.0,0);
+		glVertex3f(0,0,0);
+		glVertex3f(0,1,0);
+
+		glColor3f(0,0,1.0);
+		glVertex3f(0,0,0);
+		glVertex3f(1,0,0);
+	glEnd();
+
+
+
+	glDisable(GL_LIGHTING);
+
+	float waterY = 0.0f;
+
+	glPushMatrix();
+
+	double clip[4] = {0.0, -1.0, 0.0, (double)waterY };
+	glEnable(GL_CLIP_PLANE0);
+	glClipPlane(GL_CLIP_PLANE0, clip);
+
+	glTranslatef(0, waterY, 0);
+	glScalef(1.0f, -1.0f, 1.0f);
+	glTranslatef(0,-waterY, 0);
+
+	// mirrored dragon draw
+	drawDragon();
+
+	// mirrored submarine draw
+	drawSubmarine();
+
+	glDisable(GL_CLIP_PLANE0);
+	glPopMatrix();
+
+	glPushMatrix();
+	glScalef(4.0f, 4.0f, 4.0f);
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	GLfloat mat_ambient[4]  = { 0.10f, 0.15f, 0.25f, 1 };
+	GLfloat mat_diffuse[4]  = { 0.8f, 0.8f, 0.8f, 0.6f };
+	GLfloat mat_specular[4] = { 1, 1, 1, 1 };
+
+	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialf(GL_FRONT, GL_SHININESS, 50);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, oceanBindIndex);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	glBegin(GL_QUADS);
+	for (int jj = 0; jj < ocean_face_cnt; jj++) {
+		glNormal3f(ocean_normal[ocean[jj].N1-1].X, ocean_normal[ocean[jj].N1-1].Y, ocean_normal[ocean[jj].N1-1].Z);
+		glTexCoord2f(vertex_color2[ocean[jj].T1-1].X, vertex_color2[ocean[jj].T1-1].Y);
+		glVertex3f(vertex2[ocean[jj].V1-1].X, vertex2[ocean[jj].V1-1].Y, vertex2[ocean[jj].V1-1].Z);
+
+		glNormal3f(ocean_normal[ocean[jj].N2-1].X, ocean_normal[ocean[jj].N2-1].Y, ocean_normal[ocean[jj].N2-1].Z);
+		glTexCoord2f(vertex_color2[ocean[jj].T2-1].X, vertex_color2[ocean[jj].T2-1].Y);
+		glVertex3f(vertex2[ocean[jj].V2-1].X, vertex2[ocean[jj].V2-1].Y, vertex2[ocean[jj].V2-1].Z);
+
+		glNormal3f(ocean_normal[ocean[jj].N3-1].X, ocean_normal[ocean[jj].N3-1].Y, ocean_normal[ocean[jj].N3-1].Z);
+		glTexCoord2f(vertex_color2[ocean[jj].T3-1].X, vertex_color2[ocean[jj].T3-1].Y);
+		glVertex3f(vertex2[ocean[jj].V3-1].X, vertex2[ocean[jj].V3-1].Y, vertex2[ocean[jj].V3-1].Z);
+
+		glNormal3f(ocean_normal[ocean[jj].N4-1].X, ocean_normal[ocean[jj].N4-1].Y, ocean_normal[ocean[jj].N4-1].Z);
+		glTexCoord2f(vertex_color2[ocean[jj].T4-1].X, vertex_color2[ocean[jj].T4-1].Y);
+		glVertex3f(vertex2[ocean[jj].V4-1].X, vertex2[ocean[jj].V4-1].Y, vertex2[ocean[jj].V4-1].Z);
+	}
+	glEnd();
+
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_BLEND);
+
+	glPopMatrix();
+
+	// real dragon and submarine draw
+	drawDragon();
+	drawSubmarine();
 
 	glPushMatrix();
 	glTranslatef(0.0f, -0.7f, 0.0f);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
+
 	glEnable(GL_TEXTURE_2D);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glColor3f(1,1,1);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glColor4f(0.4f,0.4f,0.5f,1.0f);
 
 	for (int i=0; i<4; i++){
 		glBindTexture(GL_TEXTURE_2D, skyBindIndex[i]);
@@ -627,10 +714,36 @@ void display()
 
 	}
 
+	glDisable(GL_TEXTURE_2D);
+
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+
 	glPopMatrix();
 
+	glPushMatrix();
+	glRotatef(180, 1, 0 ,0);
 
+	glTranslatef(0.0f, -2.5f, 0.0f);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, moonBindIndex);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glColor3f(1,1,1);
+
+	glBegin(GL_QUADS);
+	for (int jj = 0; jj < moon_face_cnt; jj++) {
+		glTexCoord2f(vertex_color5[moon[jj].T1-1].X, 1.0f - vertex_color5[moon[jj].T1-1].Y);
+		glVertex3f(vertex5[moon[jj].V1-1].X, vertex5[moon[jj].V1-1].Y, vertex5[moon[jj].V1-1].Z);
+		glTexCoord2f(vertex_color5[moon[jj].T2-1].X, 1.0f - vertex_color5[moon[jj].T2-1].Y);
+		glVertex3f(vertex5[moon[jj].V2-1].X, vertex5[moon[jj].V2-1].Y, vertex5[moon[jj].V2-1].Z);
+		glTexCoord2f(vertex_color5[moon[jj].T3-1].X, 1.0f - vertex_color5[moon[jj].T3-1].Y);
+		glVertex3f(vertex5[moon[jj].V3-1].X, vertex5[moon[jj].V3-1].Y, vertex5[moon[jj].V3-1].Z);
+		glTexCoord2f(vertex_color5[moon[jj].T4-1].X, 1.0f - vertex_color5[moon[jj].T4-1].Y);
+		glVertex3f(vertex5[moon[jj].V4-1].X, vertex5[moon[jj].V4-1].Y, vertex5[moon[jj].V4-1].Z);
+	}
+	glEnd();
 	glDisable(GL_TEXTURE_2D);
+	glPopMatrix();
 
 
 
@@ -653,6 +766,8 @@ int main(int argc, char* argv[])
 	vertex_color2 = new Vertex[300000];
 	ocean = new MMesh[100000];
 
+	ocean_normal = new Vertex[300000];
+
 	// Submarine
 	vertex3 = new Vertex[100000];
 	vertex_color3 = new Vertex[100000];
@@ -662,6 +777,11 @@ int main(int argc, char* argv[])
 	vertex4 = new Vertex[100000];
 	vertex_color4 = new Vertex[300000];
 	sky = new MMesh[100000];
+
+	// Moon
+	vertex5 = new Vertex[100000];
+	vertex_color5 = new Vertex[300000];
+	moon = new MMesh[100000];
 
 	
 
@@ -674,6 +794,9 @@ int main(int argc, char* argv[])
 	loadBMP("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Sky/SkyTexture_PNG/Sky2.bmp", sky_texels[1], &sky_tex_w, &sky_tex_h);
 	loadBMP("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Sky/SkyTexture_PNG/Sky3.bmp", sky_texels[2], &sky_tex_w, &sky_tex_h);
 	loadBMP("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Sky/SkyTexture_PNG/Sky4.bmp", sky_texels[3], &sky_tex_w, &sky_tex_h);
+
+	loadBMP("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Moon/moon_sq.bmp", moon_texels, &moon_tex_w, &moon_tex_h);
+
 
 	int cnt_vert = 0, cnt_color = 0, cnt_norm = 0, cnt_face = 0;
 	FILE* fp;
@@ -776,7 +899,14 @@ int main(int argc, char* argv[])
 			}
 		}
 		else if(oline[0]=='v' && oline[1]=='n'){
-			ocean_norm++;
+			cnt = sscanf(oline, "vn %f %f %f", &x, &y, &z);
+			if (cnt==3){
+				ocean_normal[ocean_norm].X = x;
+				ocean_normal[ocean_norm].Y = y;
+				ocean_normal[ocean_norm].Z = z;
+				ocean_norm++;
+			}
+			
 		}
 		else if(oline[0]=='f' && oline[1]==' '){
 			int v1, t1, n1,
@@ -794,6 +924,11 @@ int main(int argc, char* argv[])
 				ocean[ocean_face].T2 = t2;
 				ocean[ocean_face].T3 = t3;
 				ocean[ocean_face].T4 = t4;
+
+				ocean[ocean_face].N1 = n1;
+				ocean[ocean_face].N2 = n2;
+				ocean[ocean_face].N3 = n3;
+				ocean[ocean_face].N4 = n4;
 
 				ocean_face++;
 
@@ -877,7 +1012,7 @@ int main(int argc, char* argv[])
 
 	// Sky Load
 	int sky_vert = 0, sky_color = 0, sky_norm = 0, sky_face = 0;
-	int sky_band = ;
+	int sky_band = 0;
 	FILE* fsky;
 	fsky = fopen("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Sky/Sky.obj", "r");
 	if (!fsky){
@@ -959,6 +1094,71 @@ int main(int argc, char* argv[])
 	sky_face_cnt = sky_face;
 	printf("v=%d  vt=%d  vn=%d  f=%d\n", sky_vert, sky_color, sky_norm, sky_face);
 
+
+	// Moon Load
+	int moon_vert = 0, moon_color = 0, moon_norm = 0, moon_face = 0;
+	FILE* fmoon;
+	fmoon = fopen("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Moon/Moon.obj", "r");
+	if (!fmoon){
+		printf("cannot open the file : Moon.obj");
+	}
+
+	char mline[512];
+	while(fgets(mline, sizeof(mline), fmoon)){
+		float x,y,z;
+		float u,v;
+		int cnt = 0;
+
+		if(mline[0]=='v' && mline[1]==' '){
+			cnt = sscanf(mline, "v %f %f %f", &x, &y, &z);
+			if(cnt == 3){
+				vertex5[moon_vert].X = x/2;
+				vertex5[moon_vert].Y = y/2;
+				vertex5[moon_vert].Z = z/2;
+				moon_vert++;
+			}
+		}
+		else if (mline[0]=='v'&&mline[1]=='t'){
+			cnt = sscanf(mline, "vt %f %f", &u, &v);
+			if(cnt == 2){
+				vertex_color5[moon_color].X = u;
+				vertex_color5[moon_color].Y = v;
+				moon_color++;
+			}
+		}
+		else if(mline[0]=='v' && mline[1]=='n'){
+			moon_norm++;
+		}
+		else if(mline[0]=='f' && mline[1]==' '){
+			int v1, t1, n1,
+				v2, t2, n2,
+				v3, t3, n3,
+				v4, t4, n4;
+			cnt = sscanf(mline, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d",&v1,&t1,&n1,&v2,&t2,&n2,&v3,&t3,&n3,&v4,&t4,&n4);
+			if(cnt==12){
+				moon[moon_face].V1 = v1;
+				moon[moon_face].V2 = v2;
+				moon[moon_face].V3 = v3;
+				moon[moon_face].V4 = v4;
+
+				moon[moon_face].T1 = t1;
+				moon[moon_face].T2 = t2;
+				moon[moon_face].T3 = t3;
+				moon[moon_face].T4 = t4;
+
+				moon_face++;
+
+			}
+		}
+		
+
+	}
+	
+	fclose(fmoon);
+
+	moon_face_cnt = moon_face;
+	printf("v=%d  vt=%d  vn=%d  f=%d\n", moon_vert, moon_color, moon_norm, moon_face);
+
 	/*
 	for(int i = 0; i < obj_group_cnt; i++){
 		printf("obj[%d]: %s  start=%d  count=%d\n",
@@ -993,6 +1193,10 @@ int main(int argc, char* argv[])
 	delete[] vertex4;
 	delete[] sky;
 	delete[] vertex_color4;
+
+	delete[] vertex5;
+	delete[] moon;
+	delete[] vertex_color5;
 
 	return 0;
 }
