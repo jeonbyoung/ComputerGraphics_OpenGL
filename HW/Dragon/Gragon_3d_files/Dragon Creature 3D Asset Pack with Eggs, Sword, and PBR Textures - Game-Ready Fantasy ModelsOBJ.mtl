@@ -1,0 +1,46 @@
+# Blender MTL File: 'Dragon Creature 3D Asset Pack with Eggs, Sword, and PBR Textures – Game-Ready Fantasy Models.blend'
+# Material Count: 4
+
+newmtl lambert1
+Ns 199.999995
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:\\M Drive Data\\SCENE PAID\\New folder\\Dragonfly-dragon\\DFD_environment_enviroment_mat_BaseColor.png
+
+newmtl lambert2
+Ns 199.999995
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:\\M Drive Data\\SCENE PAID\\New folder\\Dragon Egg\\DragoneggBaseColor.png
+
+newmtl lambert3
+Ns 199.999995
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd D:\\M Drive Data\\SCENE PAID\\New folder\\Gold Armor Dragon\\diffuse.tga.png
+
+newmtl phong2
+Ns 199.999995
+Ka 0.500000 0.500000 0.500000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 3
+map_Kd D:\\M Drive Data\\SCENE PAID\\New folder\\Dragon sword\\blinn2_albedo.png
