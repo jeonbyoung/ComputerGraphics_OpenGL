@@ -86,7 +86,7 @@ Vertex *vertex1;
 Vertex *vertex_color1;
 MMesh *dragon;
 
-GLubyte dragon_texels[2048][2048][3];
+GLubyte dragon_texels[2048][2048][4];
 GLuint dragonBindIndex = 0;
 int dragon_tex_w = 0, dragon_tex_h = 0;
 int dragon_face_cnt = 0;
@@ -96,7 +96,7 @@ Vertex *vertex2;
 Vertex *vertex_color2;
 MMesh *ocean;
 
-GLubyte ocean_texels[2048][2048][3];
+GLubyte ocean_texels[2048][2048][4];
 GLuint oceanBindIndex = 1;
 int ocean_tex_w = 0, ocean_tex_h = 0;
 int ocean_face_cnt = 0;
@@ -106,7 +106,7 @@ Vertex *vertex3;
 Vertex *vertex_color3;
 MMesh *submarine;
 
-GLubyte submarine_texels[2048][2048][3];
+GLubyte submarine_texels[2048][2048][4];
 GLuint submarineBindIndex = 2;
 int sm_tex_w = 0, sm_tex_h = 0;
 int sm_face_cnt = 0;
@@ -116,7 +116,7 @@ Vertex *vertex4;
 Vertex *vertex_color4;
 MMesh *sky;
 
-GLubyte sky_texels[4][2048][2048][3];
+GLubyte sky_texels[4][2048][2048][4];
 GLuint skyBindIndex[4];
 int sky_tex_w = 0, sky_tex_h = 0;
 int sky_face_cnt = 0;
@@ -174,7 +174,7 @@ void mouse(int, int, int, int);
 void reshape(int, int);
 void motion(int, int);
 
-void loadBMP(const char* path, GLubyte texels[2048][2048][3], int* outW, int* outH);
+void loadBMP(const char* path, GLubyte texels[2048][2048][4], int* outW, int* outH);
 
 // basic functions for computation/GUI
 // trackball codes were imported from those of Gavin Bell

@@ -361,8 +361,8 @@ void InitializeWindow(int argc, char* argv[])
 	glGenTextures(1, &dragonBindIndex);
 	glBindTexture(GL_TEXTURE_2D, dragonBindIndex);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 2048);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, dragon_tex_w, dragon_tex_h, 0,
-				GL_RGB, GL_UNSIGNED_BYTE, dragon_texels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, dragon_tex_w, dragon_tex_h, 0,
+				GL_RGBA, GL_UNSIGNED_BYTE, dragon_texels);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -373,8 +373,8 @@ void InitializeWindow(int argc, char* argv[])
 	glGenTextures(1, &oceanBindIndex);
 	glBindTexture(GL_TEXTURE_2D, oceanBindIndex);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 2048);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ocean_tex_w, ocean_tex_h, 0,
-				GL_RGB, GL_UNSIGNED_BYTE, ocean_texels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ocean_tex_w, ocean_tex_h, 0,
+				GL_RGBA, GL_UNSIGNED_BYTE, ocean_texels);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -385,8 +385,8 @@ void InitializeWindow(int argc, char* argv[])
 	glGenTextures(1, &submarineBindIndex);
 	glBindTexture(GL_TEXTURE_2D, submarineBindIndex);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 2048);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sm_tex_w, sm_tex_h, 0,
-				GL_RGB, GL_UNSIGNED_BYTE, submarine_texels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sm_tex_w, sm_tex_h, 0,
+				GL_RGBA, GL_UNSIGNED_BYTE, submarine_texels);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -396,18 +396,22 @@ void InitializeWindow(int argc, char* argv[])
 
 	// Sky
 	glGenTextures(4, skyBindIndex);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
 	for(int i = 0; i < 4; i++){
 		glBindTexture(GL_TEXTURE_2D, skyBindIndex[i]);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 2048);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sky_tex_w, sky_tex_h, 0,
-					GL_RGB, GL_UNSIGNED_BYTE, sky_texels[i]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sky_tex_w, sky_tex_h, 0,
+					GL_RGBA, GL_UNSIGNED_BYTE, sky_texels[i]);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	}
-	
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
 
 	reshape(1000, 1000);
 
@@ -440,7 +444,7 @@ void keyboard(unsigned char key, int x, int y){
 }
 
 
-void loadBMP(const char* path, GLubyte texels[2048][2048][3], int* outW, int* outH)
+void loadBMP(const char* path, GLubyte texels[2048][2048][4], int* outW, int* outH)
 {
     FILE* f = fopen(path, "rb");
     if (!f) { printf("cannot open %s\n", path); return; }
@@ -467,6 +471,7 @@ void loadBMP(const char* path, GLubyte texels[2048][2048][3], int* outW, int* ou
             texels[j][i][0] = data[k*ch + 2];   // BMP는 BGR 순서 → R
             texels[j][i][1] = data[k*ch + 1];   // G
             texels[j][i][2] = data[k*ch + 0];   // B
+			texels[j][i][3] = (ch==4) ? data[k*ch + 3] : 255;
             k++;                                  // 32bit면 알파(+3)는 무시
         }
 
@@ -599,7 +604,7 @@ void display()
 		int start = sky_band_start[i];
 		int end = (i<3) ? sky_band_start[i+1] : sky_face_cnt;
 
-		for (int jj = 0; jj < sm_face_cnt; jj++) {
+		for (int jj = start; jj < end; jj++) {
 			if (sky[jj].V4 == 0) glBegin(GL_TRIANGLES);
 			else				 glBegin(GL_QUADS);
 
@@ -872,7 +877,7 @@ int main(int argc, char* argv[])
 
 	// Sky Load
 	int sky_vert = 0, sky_color = 0, sky_norm = 0, sky_face = 0;
-	int sky_band = 1;
+	int sky_band = ;
 	FILE* fsky;
 	fsky = fopen("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Sky/Sky.obj", "r");
 	if (!fsky){
@@ -903,8 +908,8 @@ int main(int argc, char* argv[])
 			}
 		}
 		else if (strncmp(skyline, "usemtl",6)==0){
-			sky_band++;
 			sky_band_start[sky_band] = sky_face;
+			sky_band++;
 		}
 		else if(skyline[0]=='v' && skyline[1]=='n'){
 			sky_norm++;
