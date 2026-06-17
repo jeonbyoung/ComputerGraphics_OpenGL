@@ -460,27 +460,27 @@ void loadBMP(const char* path, GLubyte texels[2048][2048][4], int* outW, int* ou
     unsigned char header[54];
     fread(header, 1, 54, f);
 
-    int dataOffset = *(int*)&header[10];   // 픽셀 시작 위치
+    int dataOffset = *(int*)&header[10];
     int w          = *(int*)&header[18];
     int h          = *(int*)&header[22];
-    short bpp      = *(short*)&header[28];  // 24 or 32
-    if (h < 0) h = -h;                       // top-down 대응
-    int ch = bpp / 8;                        // 채널 수 (3 or 4)
+    short bpp      = *(short*)&header[28];
+    if (h < 0) h = -h;
+    int ch = bpp / 8;
 
     int size = ch * w * h;
     unsigned char* data = new unsigned char[size];
-    fseek(f, dataOffset, SEEK_SET);          // 헤더 건너뛰고 픽셀로 점프
+    fseek(f, dataOffset, SEEK_SET); 
     fread(data, 1, size, f);
     fclose(f);
 
     int k = 0;
     for (int j = 0; j < h; j++)
         for (int i = 0; i < w; i++) {
-            texels[j][i][0] = data[k*ch + 2];   // BMP는 BGR 순서 → R
-            texels[j][i][1] = data[k*ch + 1];   // G
-            texels[j][i][2] = data[k*ch + 0];   // B
+            texels[j][i][0] = data[k*ch + 2];
+            texels[j][i][1] = data[k*ch + 1]; 
+            texels[j][i][2] = data[k*ch + 0];
 			texels[j][i][3] = (ch==4) ? data[k*ch + 3] : 255;
-            k++;                                  // 32bit면 알파(+3)는 무시
+            k++;
         }
 
     *outW = w;
@@ -489,32 +489,41 @@ void loadBMP(const char* path, GLubyte texels[2048][2048][4], int* outW, int* ou
 }
 
 void drawDragon(){
+    glPushMatrix();
+	glTranslatef(dragonX, dragonY, dragonZ); // 궤적 위치
+    glRotatef(dragonYaw+YAW_OFFSET, 0, 1, 0);  // 진행방향 좌우
+    glRotatef(dragonPitch+PITCH_OFFSET, 1, 0, 0); // 상하 기울기
+    glTranslatef(0.367f, -0.199f, -0.079f);
+
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, dragonBindIndex);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glColor3f(1,1,1);
+
+    // 완전형 몸통 (index 3) — 그대로
+    drawDragonObject(3);
+
+    // left 날개 (idx : 6) 
+	float piv6X = -0.35f, piv6Y = 0.2f, piv6Z =  0.12f;
 	glPushMatrix();
-	glTranslatef(0, 0.3f, 0);
-
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, dragonBindIndex);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glColor3f(1,1,1);
-
-	int start = obj_groups[3].face_start;
-	int cnt = obj_groups[3].face_count;
-
-	glBegin(GL_TRIANGLES);
-
-	for (int jj = start; jj < start + cnt; jj++){
-		glTexCoord2f(vertex_color1[dragon[jj].T1-1].X, vertex_color1[dragon[jj].T1-1].Y);
-		glVertex3f(vertex1[dragon[jj].V1-1].X, vertex1[dragon[jj].V1-1].Y, vertex1[dragon[jj].V1-1].Z);
-
-		glTexCoord2f(vertex_color1[dragon[jj].T2-1].X, vertex_color1[dragon[jj].T2-1].Y);
-		glVertex3f(vertex1[dragon[jj].V2-1].X, vertex1[dragon[jj].V2-1].Y, vertex1[dragon[jj].V2-1].Z);
-
-		glTexCoord2f(vertex_color1[dragon[jj].T3-1].X, vertex_color1[dragon[jj].T3-1].Y);
-		glVertex3f(vertex1[dragon[jj].V3-1].X, vertex1[dragon[jj].V3-1].Y, vertex1[dragon[jj].V3-1].Z);
-	}
-	
-	glEnd();
+		glTranslatef(piv6X, piv6Y, piv6Z);
+		glRotatef(flapAngle, 0, 0, 1);
+		glTranslatef(-1.089f, -0.022f, 0.219f);
+		drawDragonObject(6);
 	glPopMatrix();
+
+	// right 날개 (idx : 10)
+	float piv10X = -0.4f, piv10Y = 0.2f, piv10Z = 0.12f;
+	glPushMatrix();
+		glTranslatef(piv10X, piv10Y, piv10Z);
+		glRotatef(-flapAngle, 0, 0, 1);
+		glTranslatef(-1.0750f, -0.0316f, 0.2415f);
+		drawDragonObject(10);
+	glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);   // ← 오타 주의: glDisable
+    glPopMatrix();
 }
 
 void drawSubmarine(){
@@ -544,6 +553,27 @@ void drawSubmarine(){
 	glPopMatrix();
 }
 
+// 텍스처 입혀 오브젝트 하나 그리기
+// Dragon 안에는 여러 object들이 존재해서, 개별적으로 그릴 수 있는 툴.
+void drawDragonObject(int g)
+{
+    int s = obj_groups[g].face_start;
+    int c = obj_groups[g].face_count;
+    glBegin(GL_TRIANGLES);
+    for (int jj = s; jj < s + c; jj++){
+        glTexCoord2f(vertex_color1[dragon[jj].T1-1].X, vertex_color1[dragon[jj].T1-1].Y);
+        glVertex3f(vertex1[dragon[jj].V1-1].X, vertex1[dragon[jj].V1-1].Y, vertex1[dragon[jj].V1-1].Z);
+        glTexCoord2f(vertex_color1[dragon[jj].T2-1].X, vertex_color1[dragon[jj].T2-1].Y);
+        glVertex3f(vertex1[dragon[jj].V2-1].X, vertex1[dragon[jj].V2-1].Y, vertex1[dragon[jj].V2-1].Z);
+        glTexCoord2f(vertex_color1[dragon[jj].T3-1].X, vertex_color1[dragon[jj].T3-1].Y);
+        glVertex3f(vertex1[dragon[jj].V3-1].X, vertex1[dragon[jj].V3-1].Y, vertex1[dragon[jj].V3-1].Z);
+    }
+    glEnd();
+}
+
+
+
+
 
 void display()
 {
@@ -558,9 +588,57 @@ void display()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(0, 2.0, 2.0, 0, 0, 0, 0, 1.0, 0); 
-	glTranslatef(t[0], t[1], t[2]+1);
+	glTranslatef(t[0], t[1], t[2]-1);
 	glMultMatrixf(&m[0][0]);
 
+	flapAngle += flapDir * 1.0f;
+	if (flapAngle>-10.0f)
+		flapDir = -1;
+	if (flapAngle < -40.0f)
+		flapDir = 1;
+
+	float tsec = glutGet(GLUT_ELAPSED_TIME) * 0.001f;   // 초 단위
+
+	float orbitspeed = 0.6f;
+	float freq8 = 1.8f;    // 8자 주기성
+	float Rorbit = 1.5f; 	// orbit의 반경
+	float upNdownHeight = 0.8f;    // 상하 진폭
+	float Bweave = 0.4f;    // topview에서의 떨림 폭
+	float baseY  = 0.0f;    // updown의 기준
+
+	float orbitAngle = tsec * orbitspeed;
+	float s = tsec * freq8;
+
+	// 원 궤적 중심
+	float ox = Rorbit * cosf(orbitAngle);
+	float oz = Rorbit * sinf(orbitAngle);
+
+	float weave  = Bweave * sinf(s);
+	float updown = upNdownHeight * sinf(2.0f * s);
+
+	// x-z on the top-view, 약간의 떨림을 weave로 반영.
+	// up down 은 그대로 반영.
+	dragonX = ox + weave * cosf(orbitAngle);
+	dragonZ = oz + weave * sinf(orbitAngle);
+	dragonY = baseY + updown;
+
+	// 약간의 시간 뒤의 위치를 아니, 그 방향대로
+	float dt  = 0.05f;
+	float oa2 = (tsec+dt)*orbitspeed;
+	float s2  = (tsec+dt)*freq8;
+	float ox2 = Rorbit*cosf(oa2), oz2 = Rorbit*sinf(oa2);
+	float weave2 = Bweave*sinf(s2);
+	float nx = ox2 + weave2*cosf(oa2);
+	float nz = oz2 + weave2*sinf(oa2);
+	float ny = baseY + upNdownHeight*sinf(2.0f*s2);
+
+	float dx = nx - dragonX, dy = ny - dragonY, dz = nz - dragonZ;
+	dragonYaw   = atan2f(dx, dz) * 180.0f / 3.141592f;        // 좌우 회전
+	float horiz = sqrtf(dx*dx + dz*dz);
+	dragonPitch = -atan2f(dy, horiz) * 180.0f / 3.141592f;    // 상하 회전
+	
+	drawDragon();
+	
 	// Lighting
 	glEnable(GL_NORMALIZE);
 	glShadeModel(GL_SMOOTH);
@@ -601,7 +679,7 @@ void display()
 
 
 	glDisable(GL_LIGHTING);
-
+	
 	float waterY = 0.0f;
 
 	glPushMatrix();
@@ -744,6 +822,7 @@ void display()
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 	glPopMatrix();
+	
 
 
 

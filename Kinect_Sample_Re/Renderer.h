@@ -95,6 +95,14 @@ GLuint dragonBindIndex = 0;
 int dragon_tex_w = 0, dragon_tex_h = 0;
 int dragon_face_cnt = 0;
 
+float flapAngle = 0.0f;
+int flapDir = 1;
+
+float dragonX = 0, dragonY = 0, dragonZ = 0;   // 용의 현재 궤적 위치
+float dragonYaw = 0, dragonPitch = 0;
+float YAW_OFFSET = 0.0f;
+float PITCH_OFFSET = 0.0f;
+
 // Ocean
 Vertex *vertex2;
 Vertex *vertex_color2;
@@ -194,6 +202,8 @@ void motion(int, int);
 void loadBMP(const char* path, GLubyte texels[2048][2048][4], int* outW, int* outH);
 void drawDragon();
 void drawSubmarine();
+void drawDragonObject(int g);
+void drawPartDragon();
 
 // basic functions for computation/GUI
 // trackball codes were imported from those of Gavin Bell
