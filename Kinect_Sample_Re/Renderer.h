@@ -3,6 +3,7 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <string.h>
 #ifdef __APPLE__
 #ifndef GL_SILENCE_DEPRECATION
 #define GL_SILENCE_DEPRECATION
@@ -98,6 +99,7 @@ int dragon_face_cnt = 0;
 float flapAngle = 0.0f;
 int flapDir = 1;
 
+float dragon_cx = 0, dragon_cy = 0, dragon_cz = 0;
 float dragonX = 0, dragonY = 0, dragonZ = 0;   // 용의 현재 궤적 위치
 float dragonYaw = 0, dragonPitch = 0;
 float YAW_OFFSET = 0.0f;
@@ -159,7 +161,22 @@ int side_status[50] = { 0 };
 float quat[4] = {0};
 float t[3] = {0};
 
+// Lightning
+struct LTri{
+	int v[3];
+};
+Vertex *vertex6;
+// color는 단색으로 통일시킬 거라서 사용하지 않음
+// normal도 사용하지 않아서, MMesh를 쓰지 않고, vertex만 가져다가 바로 mesh 구성.
+LTri *light_tris;
+int light_tri_cnt = 0;
+int light_obj_start[30];
+int light_obj_cnt = 0;
 
+double light_obj_cx[30], light_obj_cy[30], light_obj_cz[30];
+
+void drawLightningGroup(int group);
+void lightningPlacePos(int group, int j, float *px, float *py, float *pz);
 
 
 Vertex skt[23];

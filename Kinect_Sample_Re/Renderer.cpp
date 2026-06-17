@@ -488,12 +488,31 @@ void loadBMP(const char* path, GLubyte texels[2048][2048][4], int* outW, int* ou
     delete[] data;
 }
 
+// 텍스처 입혀 오브젝트 하나 그리기
+// Dragon 안에는 여러 object들이 존재해서, 개별적으로 그릴 수 있는 툴.
+void drawDragonObject(int g)
+{
+    int s = obj_groups[g].face_start;
+    int c = obj_groups[g].face_count;
+    glBegin(GL_TRIANGLES);
+    for (int jj = s; jj < s + c; jj++){
+        glTexCoord2f(vertex_color1[dragon[jj].T1-1].X, vertex_color1[dragon[jj].T1-1].Y);
+        glVertex3f(vertex1[dragon[jj].V1-1].X, vertex1[dragon[jj].V1-1].Y, vertex1[dragon[jj].V1-1].Z);
+        glTexCoord2f(vertex_color1[dragon[jj].T2-1].X, vertex_color1[dragon[jj].T2-1].Y);
+        glVertex3f(vertex1[dragon[jj].V2-1].X, vertex1[dragon[jj].V2-1].Y, vertex1[dragon[jj].V2-1].Z);
+        glTexCoord2f(vertex_color1[dragon[jj].T3-1].X, vertex_color1[dragon[jj].T3-1].Y);
+        glVertex3f(vertex1[dragon[jj].V3-1].X, vertex1[dragon[jj].V3-1].Y, vertex1[dragon[jj].V3-1].Z);
+    }
+    glEnd();
+}
+
 void drawDragon(){
     glPushMatrix();
 	glTranslatef(dragonX, dragonY, dragonZ); // 궤적 위치
     glRotatef(dragonYaw+YAW_OFFSET, 0, 1, 0);  // 진행방향 좌우
     glRotatef(dragonPitch+PITCH_OFFSET, 1, 0, 0); // 상하 기울기
-    glTranslatef(0.367f, -0.199f, -0.079f);
+	glScalef(1.8f, 1.8f, 1.8f);
+    glTranslatef(-dragon_cx, -dragon_cy, -dragon_cz);
 
 
     glEnable(GL_TEXTURE_2D);
@@ -526,6 +545,7 @@ void drawDragon(){
     glPopMatrix();
 }
 
+
 void drawSubmarine(){
 	glPushMatrix();
 	glTranslatef(0.4f, 0.0f, 0.4f);
@@ -553,25 +573,48 @@ void drawSubmarine(){
 	glPopMatrix();
 }
 
-// 텍스처 입혀 오브젝트 하나 그리기
-// Dragon 안에는 여러 object들이 존재해서, 개별적으로 그릴 수 있는 툴.
-void drawDragonObject(int g)
+// Lightning의 경우, 25개의 object로 구성됐음. 
+// 5개씩 group으로 나눠서 시간 별로 다른 번개들이 치게 구성.
+void drawLightningGroup(int group)
 {
-    int s = obj_groups[g].face_start;
-    int c = obj_groups[g].face_count;
-    glBegin(GL_TRIANGLES);
-    for (int jj = s; jj < s + c; jj++){
-        glTexCoord2f(vertex_color1[dragon[jj].T1-1].X, vertex_color1[dragon[jj].T1-1].Y);
-        glVertex3f(vertex1[dragon[jj].V1-1].X, vertex1[dragon[jj].V1-1].Y, vertex1[dragon[jj].V1-1].Z);
-        glTexCoord2f(vertex_color1[dragon[jj].T2-1].X, vertex_color1[dragon[jj].T2-1].Y);
-        glVertex3f(vertex1[dragon[jj].V2-1].X, vertex1[dragon[jj].V2-1].Y, vertex1[dragon[jj].V2-1].Z);
-        glTexCoord2f(vertex_color1[dragon[jj].T3-1].X, vertex_color1[dragon[jj].T3-1].Y);
-        glVertex3f(vertex1[dragon[jj].V3-1].X, vertex1[dragon[jj].V3-1].Y, vertex1[dragon[jj].V3-1].Z);
-    }
-    glEnd();
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_LIGHTING);
+    glColor3f(0.8f, 0.8f, 1.0f);
+
+    float size = 0.4f;
+	float Llength = 0.6f;
+
+	for (int j = 0; j < 5; j++){
+		int oi = group*5 + j;
+		float px, py, pz;
+		lightningPlacePos(group, j, &px, &py, &pz);
+
+		glPushMatrix();
+		glTranslatef(px,py,pz);
+		glTranslatef(-(float)light_obj_cx[oi]*size, -(float)light_obj_cy[oi]*Llength, -(float)light_obj_cz[oi]*size);
+		int start = light_obj_start[oi];
+		int end = (oi+1 < light_obj_cnt) ? light_obj_start[oi+1] : light_tri_cnt;
+		glBegin(GL_TRIANGLES);
+		for (int f = start; f < end; f++){
+			for (int k=0; k< 3; k++){
+				int vi = light_tris[f].v[k] - 1;
+				glVertex3f(vertex6[vi].X*size, vertex6[vi].Y*Llength, vertex6[vi].Z*size);
+			}
+		}
+		glEnd();
+		glPopMatrix();
+	}
 }
 
 
+void lightningPlacePos(int group, int j, float *px, float *py, float *pz){
+	float cX = 0.0f, cY = 1.2f, cZ = 0.0f;
+	float ringR = 1.6f;
+	float ang = (j*72.0f + group*24.0f) * 3.141592 / 180.0f;
+	*px = cX + ringR * cosf(ang);
+	*py = cY;
+	*pz = cZ + ringR * sinf(ang);
+}
 
 
 
@@ -588,20 +631,20 @@ void display()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(0, 2.0, 2.0, 0, 0, 0, 0, 1.0, 0); 
-	glTranslatef(t[0], t[1], t[2]-1);
+	glTranslatef(t[0], t[1]-1, t[2]-1);
 	glMultMatrixf(&m[0][0]);
 
 	flapAngle += flapDir * 1.0f;
-	if (flapAngle>-10.0f)
+	if (flapAngle> 0.0f)
 		flapDir = -1;
-	if (flapAngle < -40.0f)
+	if (flapAngle < -70.0f)
 		flapDir = 1;
 
 	float tsec = glutGet(GLUT_ELAPSED_TIME) * 0.001f;   // 초 단위
 
 	float orbitspeed = 0.6f;
 	float freq8 = 1.8f;    // 8자 주기성
-	float Rorbit = 1.5f; 	// orbit의 반경
+	float Rorbit = 2.0f; 	// orbit의 반경
 	float upNdownHeight = 0.8f;    // 상하 진폭
 	float Bweave = 0.4f;    // topview에서의 떨림 폭
 	float baseY  = 0.0f;    // updown의 기준
@@ -701,6 +744,37 @@ void display()
 	glDisable(GL_CLIP_PLANE0);
 	glPopMatrix();
 
+	float cycle = 5.0f;
+	int activeGroup = ((int)(tsec / cycle)) % 3;
+	float phase = fmodf(tsec, cycle);
+	bool flashing = (phase < 0.4f) && (fmodf(phase*25.0f, 2.0f) < 1.0f);
+
+	float size = 0.15f;
+	float Llength = 0.5f;
+
+	if (flashing){
+		for (int j = 0; j < 5; j++){
+			int id = GL_LIGHT1 + j;
+			glEnable(id);
+			float px, py, pz;
+			lightningPlacePos(activeGroup, j, &px, &py, &pz);
+			GLfloat pos[4] = {px, py, pz, 1.0f};
+			glLightfv(id, GL_POSITION, pos);
+			GLfloat col[4] = {0.7f, 0.8f, 1.0f, 1.0f};
+			glLightfv(id, GL_DIFFUSE, col);
+			glLightfv(id, GL_SPECULAR, col);
+			glLightf(id, GL_CONSTANT_ATTENUATION, 1.0f);
+			glLightf(id, GL_LINEAR_ATTENUATION, 0.0f);
+			glLightf(id, GL_QUADRATIC_ATTENUATION, 0.0f);
+
+		}
+	}
+	else{
+		for (int j=0; j<5; j++){
+			glDisable(GL_LIGHT1 + j);
+		}
+	}
+
 	glPushMatrix();
 	glScalef(4.0f, 4.0f, 4.0f);
 
@@ -752,6 +826,10 @@ void display()
 	// real dragon and submarine draw
 	drawDragon();
 	drawSubmarine();
+
+	if(flashing){
+		drawLightningGroup(activeGroup);
+	}
 
 	glPushMatrix();
 	glTranslatef(0.0f, -0.7f, 0.0f);
@@ -826,6 +904,8 @@ void display()
 
 
 
+
+
 	glutSwapBuffers();
 }
 
@@ -862,6 +942,11 @@ int main(int argc, char* argv[])
 	vertex_color5 = new Vertex[300000];
 	moon = new MMesh[100000];
 
+	// Lightning
+	vertex6 = new Vertex[200000];
+	light_tris = new LTri[300000];
+
+
 	
 
 	
@@ -875,7 +960,7 @@ int main(int argc, char* argv[])
 	loadBMP("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Sky/SkyTexture_PNG/Sky4.bmp", sky_texels[3], &sky_tex_w, &sky_tex_h);
 
 	loadBMP("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Moon/moon_sq.bmp", moon_texels, &moon_tex_w, &moon_tex_h);
-
+	// Lightning은 그냥 단색으로 칠할 예정.
 
 	int cnt_vert = 0, cnt_color = 0, cnt_norm = 0, cnt_face = 0;
 	FILE* fp;
@@ -885,6 +970,10 @@ int main(int argc, char* argv[])
 	}
 
 	char line[512];
+
+	float cx = 0, cy = 0, cz = 0;
+	int nforc = 0;
+	
 	while(fgets(line, sizeof(line), fp)){
 		float x,y,z;
 		float u,v;
@@ -897,6 +986,12 @@ int main(int argc, char* argv[])
 				vertex1[cnt_vert].Y = y / scale;
 				vertex1[cnt_vert].Z = z / scale;
 				cnt_vert++;
+				if (obj_group_cnt==4){
+					cx += x / scale;
+					cy += y / scale;
+					cz += z / scale;
+					nforc++;
+				}
 			}
 		}
 		else if (line[0]=='v'&&line[1]=='t'){
@@ -942,6 +1037,9 @@ int main(int argc, char* argv[])
 	}
 
 	fclose(fp);
+	dragon_cx = cx/nforc;
+	dragon_cy = cy/nforc;
+	dragon_cz = cz/nforc;
 
 	printf("v=%d  vt=%d  vn=%d  f=%d\n", cnt_vert, cnt_color, cnt_norm, cnt_face);
 
@@ -1237,6 +1335,78 @@ int main(int argc, char* argv[])
 
 	moon_face_cnt = moon_face;
 	printf("v=%d  vt=%d  vn=%d  f=%d\n", moon_vert, moon_color, moon_norm, moon_face);
+
+
+	/*
+		Lightning의 경우,
+		f 2545/179/93 2546/180/94 2547/181/95 2548/182/96 2549/183/97 2550/184/98 2551/185/99 2552/186/100 2553/187/101 2554/188/102
+		위와 같이, 10개의 vertex로 구성된 poly도 있어서, 모두 삼각형으로 subdivision 수행했습니다.
+	*/
+	int lightning_vertex = 0, lightning_tri = 0;
+	FILE *fl = fopen("/Users/w/Desktop/Computer_Grahphics/Code/glcode5/HW/Lightning/Lightning.obj","r");
+	if (!fl){
+		printf("cannot open the file : Lightning.obj");
+	}
+
+	char lline[1024];
+	while (fgets(lline, sizeof(lline), fl)){
+		if (lline[0]=='v' && lline[1]==' '){
+			float x,y,z;
+			int cnt = sscanf(lline, "v %f %f %f", &x, &y, &z);
+			if (cnt==3){
+				vertex6[lightning_vertex].X = x;
+				vertex6[lightning_vertex].Y = y;
+				vertex6[lightning_vertex].Z = z;
+				lightning_vertex++;
+			}
+		}
+		else if (lline[0] == 'o' && lline[1]== ' '){
+			light_obj_start[light_obj_cnt] = lightning_tri;
+			light_obj_cnt++;
+		}
+		else if (lline[0]=='f' && lline[1]==' '){
+			int idx[16];
+			int cnt = 0;
+			char *tok = strtok(lline + 2, " \n\r");
+			while (tok && cnt < 16){
+				int vi = 0;
+				// 어짜피 지금 상황에서는 vn,vt가 필요없으니, v만 받아옴.
+				sscanf(tok, "%d", &vi);
+				idx[cnt] = vi;
+				cnt++;
+				tok = strtok(NULL, " \n\r");
+			}
+			for (int k=1; k < cnt -1; k++){
+				// fan
+				light_tris[lightning_tri].v[0] = idx[0];
+				light_tris[lightning_tri].v[1] = idx[k];
+				light_tris[lightning_tri].v[2] = idx[k+1];
+				lightning_tri++;
+			}
+		}
+	}
+	fclose(fl);
+	light_tri_cnt = lightning_tri;
+	printf("lightning_vertex=%d  lightning_tri=%d  lightning_objs=%d\n", lightning_vertex, lightning_tri, light_obj_cnt);
+
+	for (int oi = 0; oi < light_obj_cnt; oi++){
+		int start = light_obj_start[oi];
+		int end = (oi+1 < light_obj_cnt) ? light_obj_start[oi+1] : light_tri_cnt;
+		double cx=0, cy=0, cz=0;
+		long n=0;
+		for (int f = start; f < end; f++){
+			for (int k=0; k < 3; k++){
+				int vi = light_tris[f].v[k] - 1;
+				cx += vertex6[vi].X;
+				cy += vertex6[vi].Y;
+				cz += vertex6[vi].Z;
+				n++;
+			}
+		}
+		light_obj_cx[oi] = cx/n;
+		light_obj_cy[oi] = cy/n;
+		light_obj_cz[oi] = cz/n;
+	}
 
 	/*
 	for(int i = 0; i < obj_group_cnt; i++){
